@@ -88,6 +88,12 @@ func (l *LightsService) Get(name string) *Light {
 	return &Light{error: ErrNotExist}
 }
 
+// Scan searches for new lights on the system.
+func (l *LightsService) Scan() error {
+	_, err := l.bridge.call(http.MethodPost, nil, "lights")
+	return err
+}
+
 func (l *LightsService) idMap() (map[string]*Light, error) {
 	msg, err := l.bridge.call(http.MethodGet, nil, "lights")
 	if err != nil {
@@ -133,6 +139,45 @@ type Light struct {
 
 	// ManufacturerName is the manufacturer name.
 	ManufacturerName string `json:"manufacturername"`
+}
+
+// On turns the light on.
+func (l *Light) On() error { return l.onState(true) }
+
+// Off turns the light off.
+func (l *Light) Off() error { return l.onState(false) }
+
+// Switch toggles the light's on state.
+func (l *Light) Switch() error { return l.onState(!l.State.On) }
+
+// Effect sets the dynamic effect of the light, can either be "none" or
+// "colorloop". If set to colorloop, the light will cycle through all
+// hues using the current brightness and saturation settings.
+func (l *Light) Effect(name string) error {
+	err := l.State.make(&LightState{Effect: name, On: true})
+	if err == nil {
+		l.State.Effect = name
+	}
+	return err
+}
+
+// Rename sets the name by which this light can be addressed.
+func (l *Light) Rename(name string) error {
+	if l.error != nil {
+		return l.error
+	}
+	_, err := l.bridge.call(http.MethodPut, map[string]interface{}{
+		"name": name,
+	}, "lights", l.ID)
+	return err
+}
+
+func (l *Light) onState(b bool) error {
+	err := l.State.make(&LightState{On: b})
+	if err == nil {
+		l.State.On = b
+	}
+	return err
 }
 
 // LightState holds the state of a specific light. Setting these properties
@@ -190,44 +235,5 @@ func (ls *LightState) make(state *LightState) error {
 		return ls.l.error
 	}
 	_, err := ls.l.bridge.call(http.MethodPut, state, "lights", ls.l.ID, "state")
-	return err
-}
-
-// On turns the light on.
-func (l *Light) On() error { return l.onState(true) }
-
-// Off turns the light off.
-func (l *Light) Off() error { return l.onState(false) }
-
-// Switch toggles the light's on state.
-func (l *Light) Switch() error { return l.onState(!l.State.On) }
-
-// Effect sets the dynamic effect of the light, can either be "none" or
-// "colorloop". If set to colorloop, the light will cycle through all
-// hues using the current brightness and saturation settings.
-func (l *Light) Effect(name string) error {
-	err := l.State.make(&LightState{Effect: name, On: true})
-	if err == nil {
-		l.State.Effect = name
-	}
-	return err
-}
-
-// Rename sets the name by which this light can be addressed.
-func (l *Light) Rename(name string) error {
-	if l.error != nil {
-		return l.error
-	}
-	_, err := l.bridge.call(http.MethodPut, map[string]interface{}{
-		"name": name,
-	}, "lights", l.ID)
-	return err
-}
-
-func (l *Light) onState(b bool) error {
-	err := l.State.make(&LightState{On: b})
-	if err == nil {
-		l.State.On = b
-	}
 	return err
 }
