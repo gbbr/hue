@@ -150,6 +150,9 @@ func (l *Light) Off() error { return l.onState(false) }
 // Toggle toggles the light's "on" state.
 func (l *Light) Toggle() error { return l.onState(!l.State.On) }
 
+// Error will return any error that ocurred while trying to retrieve this light.
+func (l *Light) Error() error { return l.error }
+
 // Effect sets the dynamic effect of the light, can either be "none" or
 // "colorloop". If set to colorloop, the light will cycle through all
 // hues using the current brightness and saturation settings.
