@@ -69,7 +69,7 @@ func (l *LightsService) GetByID(id string) *Light {
 	}
 	v, ok := list[id]
 	if !ok {
-		return &Light{error: ErrNotExist}
+		return &Light{error: ErrNotExist, State: &LightState{}}
 	}
 	return v
 }
@@ -85,7 +85,7 @@ func (l *LightsService) Get(name string) *Light {
 			return l
 		}
 	}
-	return &Light{error: ErrNotExist}
+	return &Light{error: ErrNotExist, State: &LightState{}}
 }
 
 // Scan searches for new lights on the system.
@@ -169,6 +169,9 @@ func (l *Light) Rename(name string) error {
 	_, err := l.bridge.call(http.MethodPut, map[string]interface{}{
 		"name": name,
 	}, "lights", l.ID)
+	if err == nil {
+		l.Name = name
+	}
 	return err
 }
 
