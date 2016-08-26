@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"strings"
 )
 
 type Bridge struct {
@@ -16,15 +15,15 @@ type Bridge struct {
 	username string
 }
 
-// Pair attempts to authentiticate with the bridge. The link button on the bridge
-// must be pressed before calling.
+// Pair attempts to pair with the bridge. The link button on the bridge must be
+// pressed before calling this method.
 func (b *Bridge) Pair() error { return b.pairAs("gbbr/hue") }
 
-// PairAs has the same outcome as Pair, except it allows setting the name of the
-// app which will be used to authenticate.
+// PairAs has the same outcome as Pair, except it allows setting how the program
+// identifies itself.
 func (b *Bridge) PairAs(appName string) error { return b.pairAs(appName) }
 
-// IsPaired will return true if this bridge has been paired with.
+// IsPaired will return true if the program has already paired with this bridge.
 func (b *Bridge) IsPaired() bool { return b.username != "" }
 
 // addr constructs the URL of the API using the passed tokens. Some examples:
@@ -58,9 +57,17 @@ type APIError struct {
 func (e APIError) Error() string { return e.Msg }
 
 // call calls the API at the URL specified by tokens using the given method and
-// request body.
-func (b Bridge) call(method, body string, tokens ...string) ([]byte, error) {
-	req, err := http.NewRequest(method, b.addr(tokens...), strings.NewReader(body))
+// request body. If no request body is desired, body should be nil.
+func (b Bridge) call(method string, body interface{}, tokens ...string) ([]byte, error) {
+	bd := []byte{}
+	if body != nil {
+		var err error
+		bd, err = json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+	}
+	req, err := http.NewRequest(method, b.addr(tokens...), bytes.NewReader(bd))
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +99,9 @@ func (b *Bridge) pairAs(appName string) error {
 	if err != nil {
 		return err
 	}
-	body := fmt.Sprintf(`{"devicetype":"%s#%s-%s"}`, appName, host, runtime.GOOS)
-	msg, err := b.call(http.MethodPost, body)
+	msg, err := b.call(http.MethodPost, map[string]interface{}{
+		"devicetype": fmt.Sprintf("%s#%s-%s", appName, host, runtime.GOOS),
+	})
 	if err != nil {
 		return err
 	}

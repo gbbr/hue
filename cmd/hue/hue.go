@@ -24,9 +24,8 @@ func main() {
 		}
 	}
 
-	err = b.Lights().Switch()
+	err = b.Lights().Get("Couch").Switch()
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Printf("%#v", err)
 	}
-	//log.Printf("%# v", pretty.Formatter(list))
 }
