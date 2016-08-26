@@ -226,7 +226,7 @@ type LightState struct {
 	Saturation uint8 `json:"sat,omitempty"`
 }
 
-// Commit reconciles the current state with the physical light.
+// Commit commits the new state to the bridge.
 func (ls *LightState) Commit() error { return ls.make(ls) }
 
 func (ls *LightState) make(state *LightState) error {
