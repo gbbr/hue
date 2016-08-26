@@ -69,7 +69,7 @@ func (l *LightsService) GetByID(id string) *Light {
 	}
 	v, ok := list[id]
 	if !ok {
-		return &Light{error: ErrNotExist, State: &LightState{}}
+		return &Light{error: ErrNotExist}
 	}
 	return v
 }
@@ -85,7 +85,7 @@ func (l *LightsService) Get(name string) *Light {
 			return l
 		}
 	}
-	return &Light{error: ErrNotExist, State: &LightState{}}
+	return &Light{error: ErrNotExist}
 }
 
 // Scan searches for new lights on the system.
@@ -125,7 +125,7 @@ type Light struct {
 	SWVersion string `json:"swversion"`
 
 	// State details the state of the light.
-	State *LightState `json:"state"`
+	State LightState `json:"state"`
 
 	// Type is a fixed name describing the type of light.
 	Type string `json:"type"`
@@ -157,6 +157,9 @@ func (l *Light) Error() error { return l.error }
 // "colorloop". If set to colorloop, the light will cycle through all
 // hues using the current brightness and saturation settings.
 func (l *Light) Effect(name string) error {
+	if l.error != nil {
+		return l.error
+	}
 	err := l.State.make(&LightState{Effect: name, On: true})
 	if err == nil {
 		l.State.Effect = name
@@ -179,6 +182,9 @@ func (l *Light) Rename(name string) error {
 }
 
 func (l *Light) onState(b bool) error {
+	if l.error != nil {
+		return l.error
+	}
 	err := l.State.make(&LightState{On: b})
 	if err == nil {
 		l.State.On = b

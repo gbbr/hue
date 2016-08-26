@@ -9,8 +9,8 @@ import (
 )
 
 var testLights = map[string]*Light{
-	"l1": &Light{UID: "l1uid", Name: "l1name", Type: "l1type", State: new(LightState)},
-	"l2": &Light{UID: "l2uid", Name: "l2name", Type: "l2type", State: new(LightState)},
+	"l1": &Light{UID: "l1uid", Name: "l1name", Type: "l1type"},
+	"l2": &Light{UID: "l2uid", Name: "l2name", Type: "l2type"},
 }
 
 // serviceTestTools is a toolset that can be used to test a service on the bridge.
