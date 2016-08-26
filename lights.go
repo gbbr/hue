@@ -44,9 +44,9 @@ func (l *LightsService) Off() error {
 	return l.ForEach(func(l *Light) { l.Off() })
 }
 
-// Switch toggles all lights on state.
-func (l *LightsService) Switch() error {
-	return l.ForEach(func(l *Light) { l.Switch() })
+// Toggle toggles all lights "on" state.
+func (l *LightsService) Toggle() error {
+	return l.ForEach(func(l *Light) { l.Toggle() })
 }
 
 // ForEach traverses each light and passes it as an argument to the given function.
@@ -147,8 +147,8 @@ func (l *Light) On() error { return l.onState(true) }
 // Off turns the light off.
 func (l *Light) Off() error { return l.onState(false) }
 
-// Switch toggles the light's on state.
-func (l *Light) Switch() error { return l.onState(!l.State.On) }
+// Toggle toggles the light's "on" state.
+func (l *Light) Toggle() error { return l.onState(!l.State.On) }
 
 // Effect sets the dynamic effect of the light, can either be "none" or
 // "colorloop". If set to colorloop, the light will cycle through all
@@ -180,9 +180,7 @@ func (l *Light) onState(b bool) error {
 	return err
 }
 
-// LightState holds the state of a specific light. Setting these properties
-// directly will not alter a light's physical state until the Commit method
-// is called. Alternatively, some convenience methods are provided.
+// LightState holds the state of a specific light.
 type LightState struct {
 	l *Light
 

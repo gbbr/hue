@@ -24,7 +24,7 @@ func main() {
 		}
 	}
 
-	err = b.Lights().Get("Couch").Switch()
+	err = b.Lights().Get("Couch").Toggle()
 	if err != nil {
 		log.Printf("%#v", err)
 	}
