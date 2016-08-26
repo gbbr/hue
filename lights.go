@@ -62,30 +62,30 @@ func (l *LightsService) ForEach(fn func(*Light)) error {
 }
 
 // GetByID returns a light by id.
-func (l *LightsService) GetByID(id string) *Light {
+func (l *LightsService) GetByID(id string) (*Light, error) {
 	list, err := l.idMap()
 	if err != nil {
-		return &Light{error: err}
+		return nil, ErrNotExist
 	}
 	v, ok := list[id]
 	if !ok {
-		return &Light{error: ErrNotExist}
+		return nil, ErrNotExist
 	}
-	return v
+	return v, nil
 }
 
 // Get returns a light by name.
-func (l *LightsService) Get(name string) *Light {
+func (l *LightsService) Get(name string) (*Light, error) {
 	list, err := l.idMap()
 	if err != nil {
-		return &Light{error: err}
+		return nil, err
 	}
 	for _, l := range list {
 		if l.Name == name {
-			return l
+			return l, nil
 		}
 	}
-	return &Light{error: ErrNotExist}
+	return nil, ErrNotExist
 }
 
 // Scan searches for new lights on the system.
@@ -150,16 +150,10 @@ func (l *Light) Off() error { return l.onState(false) }
 // Toggle toggles the light's "on" state.
 func (l *Light) Toggle() error { return l.onState(!l.State.On) }
 
-// Error will return any error that ocurred while trying to retrieve this light.
-func (l *Light) Error() error { return l.error }
-
 // Effect sets the dynamic effect of the light, can either be "none" or
 // "colorloop". If set to colorloop, the light will cycle through all
 // hues using the current brightness and saturation settings.
 func (l *Light) Effect(name string) error {
-	if l.error != nil {
-		return l.error
-	}
 	err := l.State.make(&LightState{Effect: name, On: true})
 	if err == nil {
 		l.State.Effect = name
@@ -169,9 +163,6 @@ func (l *Light) Effect(name string) error {
 
 // Rename sets the name by which this light can be addressed.
 func (l *Light) Rename(name string) error {
-	if l.error != nil {
-		return l.error
-	}
 	_, err := l.bridge.call(http.MethodPut, map[string]interface{}{
 		"name": name,
 	}, "lights", l.ID)
@@ -182,9 +173,6 @@ func (l *Light) Rename(name string) error {
 }
 
 func (l *Light) onState(b bool) error {
-	if l.error != nil {
-		return l.error
-	}
 	err := l.State.make(&LightState{On: b})
 	if err == nil {
 		l.State.On = b
@@ -242,9 +230,6 @@ type LightState struct {
 func (ls *LightState) Commit() error { return ls.make(ls) }
 
 func (ls *LightState) make(state *LightState) error {
-	if ls.l.error != nil {
-		return ls.l.error
-	}
 	_, err := ls.l.bridge.call(http.MethodPut, state, "lights", ls.l.ID, "state")
 	return err
 }

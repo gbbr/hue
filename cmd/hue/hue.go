@@ -17,8 +17,11 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	err = b.Lights().Get("Couch").Toggle()
+	l, err := b.Lights().Get("Couch")
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err := l.Toggle(); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -98,7 +98,10 @@ func TestLightsService(t *testing.T) {
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ok", func(t *testing.T) {
-			l := mb.b.Lights().Get("l1name")
+			l, err := mb.b.Lights().Get("l1name")
+			if err != nil {
+				t.Fatal(err)
+			}
 			if l.UID != testLights["l1"].UID {
 				t.Fatalf("expected %v, got %v", l, testLights["l1"])
 			}
@@ -111,16 +114,19 @@ func TestLightsService(t *testing.T) {
 		})
 
 		t.Run("error", func(t *testing.T) {
-			l := mb.b.Lights().Get("some bogus")
-			if l.error != ErrNotExist {
-				t.Fatalf("expected ErrNotExist, instead got %v", l.error)
+			_, err := mb.b.Lights().Get("some bogus")
+			if err != ErrNotExist {
+				t.Fatalf("expected error, got %v", err)
 			}
 		})
 	})
 
 	t.Run("GetByID", func(t *testing.T) {
 		t.Run("ok", func(t *testing.T) {
-			l := mb.b.Lights().GetByID("l1")
+			l, err := mb.b.Lights().GetByID("l1")
+			if err != nil {
+				t.Fatal(err)
+			}
 			if l.UID != testLights["l1"].UID {
 				t.Fatalf("expected %v, got %v", l, testLights["l1"])
 			}
@@ -133,9 +139,9 @@ func TestLightsService(t *testing.T) {
 		})
 
 		t.Run("error", func(t *testing.T) {
-			l := mb.b.Lights().GetByID("some bogus")
-			if l.error != ErrNotExist {
-				t.Fatalf("expected ErrNotExist, instead got %v", l.error)
+			_, err := mb.b.Lights().GetByID("some bogus")
+			if err != ErrNotExist {
+				t.Fatalf("expected error, got %v", err)
 			}
 		})
 	})
@@ -147,7 +153,10 @@ func TestLight(t *testing.T) {
 	mb.nextResponse = testLights
 
 	t.Run("On", func(t *testing.T) {
-		l := mb.b.Lights().Get("l1name")
+		l, err := mb.b.Lights().Get("l1name")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if l.State.On {
 			t.Fatal("expected light to be off")
 		}
@@ -160,7 +169,10 @@ func TestLight(t *testing.T) {
 	})
 
 	t.Run("Off", func(t *testing.T) {
-		l := mb.b.Lights().Get("l1name")
+		l, err := mb.b.Lights().Get("l1name")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if l.State.On {
 			t.Fatal("expected light to be off")
 		}
@@ -179,7 +191,10 @@ func TestLight(t *testing.T) {
 	})
 
 	t.Run("Toggle", func(t *testing.T) {
-		l := mb.b.Lights().Get("l1name")
+		l, err := mb.b.Lights().Get("l1name")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if err := l.Toggle(); err != nil {
 			t.Fatal(err)
 		}
@@ -195,7 +210,10 @@ func TestLight(t *testing.T) {
 	})
 
 	t.Run("Effect", func(t *testing.T) {
-		l := mb.b.Lights().Get("l1name")
+		l, err := mb.b.Lights().Get("l1name")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if err := l.Effect("asd"); err != nil {
 			t.Fatal(err)
 		}
@@ -205,7 +223,10 @@ func TestLight(t *testing.T) {
 	})
 
 	t.Run("Rename", func(t *testing.T) {
-		l := mb.b.Lights().Get("l1name")
+		l, err := mb.b.Lights().Get("l1name")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if err := l.Rename("asd"); err != nil {
 			t.Fatal(err)
 		}
@@ -220,7 +241,10 @@ func TestLightState(t *testing.T) {
 	defer mb.teardown()
 	mb.nextResponse = testLights
 
-	l1 := mb.b.Lights().GetByID("l1")
+	l1, err := mb.b.Lights().GetByID("l1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	l1.State.On = true
 	l1.State.Saturation = 123
 	l1.State.Commit()
