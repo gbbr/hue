@@ -186,7 +186,8 @@ func (l *Light) onState(b bool) error {
 	return err
 }
 
-// LightState holds the state of a specific light.
+// LightState holds the state of a specific light. You may alter this structure
+// and commit it using the provided method.
 type LightState struct {
 	l *Light
 
