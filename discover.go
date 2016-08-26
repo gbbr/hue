@@ -14,11 +14,10 @@ import (
 	"time"
 )
 
-// ErrNotFound is returned when discovery was unsuccessful and no bridge was
-// found.
+// ErrNotFound is returned when no bridge was discovered.
 var ErrNotFound = errors.New("no bridge was found")
 
-// Discover returns the first Hue Bridge that it finds on the local network.
+// Discover returns the (first) bridge that it finds on the local network.
 func Discover() (*Bridge, error) {
 	if b := fromCache(); b != nil {
 		return b, nil

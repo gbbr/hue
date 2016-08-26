@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/gbbr/hue"
 )
@@ -12,21 +9,24 @@ import (
 func main() {
 	b, err := hue.Discover()
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Fatal(err)
 	}
 	if !b.IsPaired() {
-		fmt.Println("Press link button on Bridge, then press ENTER to continue...")
-		r := bufio.NewReader(os.Stdin)
-		r.ReadByte()
-		err = b.Pair()
-		if err != nil {
-			log.Fatalf("%#v", err)
+		// link button must be pressed for non-error response
+		if err := b.Pair(); err != nil {
+			log.Fatal(err)
 		}
 	}
-
-	err = b.Lights().Switch()
+	l, err := b.Lights().Get("Couch")
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Fatal(err)
 	}
-	//log.Printf("%# v", pretty.Formatter(list))
+	err = l.Set(&hue.State{
+		TransitionTime: 0,
+		Brightness:     255,
+		XY:             &[2]float64{1, 0.8},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
