@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -215,32 +214,11 @@ var discoverLocalTestsuite = map[string]struct {
 	},
 }
 
-// localIP attempts to get the local network IP. It assumes that it starts with
-// 192.168.
-func localIP(t *testing.T) net.IP {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		t.Fatal(err)
-	}
-	var addr net.Addr
-	for _, a := range addrs {
-		if strings.HasPrefix(a.String(), "192.168.") {
-			addr = a
-			break
-		}
-	}
-	if addr == nil {
-		t.Fatal("could not obtain local network IP, maybe your system doesn't start with 192.168, in which case you need to amend function dicover_test.go/localIP")
-	}
-	ip := strings.Split(addr.String(), "/")[0]
-	return net.ParseIP(ip)
-}
-
 func TestDiscoverLocal(t *testing.T) {
 	origAddr := mcastAddr
 	origDeadline := connDeadline
 	setup := func() *net.UDPConn {
-		mcastAddr = &net.UDPAddr{IP: localIP(t), Port: 9999}
+		mcastAddr = &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9999}
 		// shorten deadline
 		connDeadline = time.Second
 		conn, err := net.ListenUDP("udp", mcastAddr)
