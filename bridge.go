@@ -88,8 +88,10 @@ func (b Bridge) call(method string, body interface{}, tokens ...string) ([]byte,
 			return nil, err
 		}
 	}
-	if len(errors) > 0 && errors[0].Err.Code != 0 {
-		return nil, errors[0].Err
+	for _, e := range errors {
+		if e.Err.Code != 0 {
+			return nil, e.Err
+		}
 	}
 	return slurp, nil
 }

@@ -72,9 +72,6 @@ func TestLightsService(t *testing.T) {
 		if list[1].bridge != mb.b || list[0].bridge != mb.b {
 			t.Fatalf("expected to link lights to bridges")
 		}
-		if list[1].State.l == nil || list[0].State.l == nil {
-			t.Fatalf("expected to link states to lights")
-		}
 	})
 
 	t.Run("ForEach", func(t *testing.T) {
@@ -108,9 +105,6 @@ func TestLightsService(t *testing.T) {
 			if l.bridge != mb.b {
 				t.Fatal("didn't link bridge")
 			}
-			if l.State.l != l {
-				t.Fatal("didn't link state")
-			}
 		})
 
 		t.Run("error", func(t *testing.T) {
@@ -133,9 +127,6 @@ func TestLightsService(t *testing.T) {
 			if l.bridge != mb.b {
 				t.Fatal("didn't link bridge")
 			}
-			if l.State.l != l {
-				t.Fatal("didn't link state")
-			}
 		})
 
 		t.Run("error", func(t *testing.T) {
@@ -152,76 +143,6 @@ func TestLight(t *testing.T) {
 	defer mb.teardown()
 	mb.nextResponse = testLights
 
-	t.Run("On", func(t *testing.T) {
-		l, err := mb.b.Lights().Get("l1name")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if l.State.On {
-			t.Fatal("expected light to be off")
-		}
-		if err := l.On(); err != nil {
-			t.Fatal(err)
-		}
-		if !l.State.On {
-			t.Fatal("expected light to turn on")
-		}
-	})
-
-	t.Run("Off", func(t *testing.T) {
-		l, err := mb.b.Lights().Get("l1name")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if l.State.On {
-			t.Fatal("expected light to be off")
-		}
-		if err := l.On(); err != nil {
-			t.Fatal(err)
-		}
-		if !l.State.On {
-			t.Fatal("expected light to turn on")
-		}
-		if err := l.Off(); err != nil {
-			t.Fatal(err)
-		}
-		if l.State.On {
-			t.Fatal("expected light to be off")
-		}
-	})
-
-	t.Run("Toggle", func(t *testing.T) {
-		l, err := mb.b.Lights().Get("l1name")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := l.Toggle(); err != nil {
-			t.Fatal(err)
-		}
-		if !l.State.On {
-			t.Fatal("expected light to turn on")
-		}
-		if err := l.Toggle(); err != nil {
-			t.Fatal(err)
-		}
-		if l.State.On {
-			t.Fatal("expected light to be off")
-		}
-	})
-
-	t.Run("Effect", func(t *testing.T) {
-		l, err := mb.b.Lights().Get("l1name")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := l.Effect("asd"); err != nil {
-			t.Fatal(err)
-		}
-		if l.State.Effect != "asd" {
-			t.Fatalf("expected effect 'asd', got '%s'", l.State.Effect)
-		}
-	})
-
 	t.Run("Rename", func(t *testing.T) {
 		l, err := mb.b.Lights().Get("l1name")
 		if err != nil {
@@ -234,24 +155,4 @@ func TestLight(t *testing.T) {
 			t.Fatalf("expected name to become 'asd', got '%s'", l.Name)
 		}
 	})
-}
-
-func TestLightState(t *testing.T) {
-	mb := mockBridge(t)
-	defer mb.teardown()
-	mb.nextResponse = testLights
-
-	l1, err := mb.b.Lights().GetByID("l1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	l1.State.On = true
-	l1.State.Saturation = 123
-	l1.State.Commit()
-	if mb.lastMethod != http.MethodPut {
-		t.Fatalf("expected PUT, got %s", mb.lastMethod)
-	}
-	if mb.lastPath != "/api/bridge_username/lights/l1/state" {
-		t.Fatalf("expected PUT, got %s", mb.lastMethod)
-	}
 }

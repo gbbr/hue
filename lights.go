@@ -104,7 +104,6 @@ func (l *LightsService) idMap() (map[string]*Light, error) {
 	for id, ll := range all {
 		ll.bridge = l.bridge
 		ll.ID = id
-		ll.State.l = ll
 	}
 	return all, err
 }
@@ -112,7 +111,6 @@ func (l *LightsService) idMap() (map[string]*Light, error) {
 // Light holds information about a specific light, including its state.
 type Light struct {
 	bridge *Bridge
-	error  error
 
 	// ID is the ID that the bridge returns for this light.
 	ID string
@@ -142,23 +140,25 @@ type Light struct {
 }
 
 // On turns the light on.
-func (l *Light) On() error { return l.onState(true) }
+func (l *Light) On() error { return l.Set(&State{On: true}) }
 
 // Off turns the light off.
-func (l *Light) Off() error { return l.onState(false) }
-
-// Toggle toggles the light's "on" state.
-func (l *Light) Toggle() error { return l.onState(!l.State.On) }
-
-// Effect sets the dynamic effect of the light, can either be "none" or
-// "colorloop". If set to colorloop, the light will cycle through all
-// hues using the current brightness and saturation settings.
-func (l *Light) Effect(name string) error {
-	err := l.State.make(&LightState{Effect: name, On: true})
+func (l *Light) Off() error {
+	_, err := l.bridge.call(http.MethodPut, struct {
+		On bool `json:"on"`
+	}{false}, "lights", l.ID, "state")
 	if err == nil {
-		l.State.Effect = name
+		l.State.On = false
 	}
 	return err
+}
+
+// Toggle toggles a light on/off.
+func (l *Light) Toggle() error {
+	if l.State.On {
+		return l.Off()
+	}
+	return l.On()
 }
 
 // Rename sets the name by which this light can be addressed.
@@ -172,43 +172,27 @@ func (l *Light) Rename(name string) error {
 	return err
 }
 
-func (l *Light) onState(b bool) error {
-	err := l.State.make(&LightState{On: b})
-	if err == nil {
-		l.State.On = b
+// Set sets the new state of the light. Note that Set can not turn the light off.
+// In order to do that, use the provided Off method.
+func (l *Light) Set(s *State) error {
+	_, err := l.bridge.call(http.MethodPut, s, "lights", l.ID, "state")
+	if err != nil {
+		return err
+	}
+	r, err := l.bridge.call(http.MethodGet, nil, "lights", l.ID)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(r, l); err != nil {
+		return err
 	}
 	return err
 }
 
-// LightState holds the state of a specific light. You may alter this structure
-// and commit it using the provided method.
-type LightState struct {
-	l *Light
-
-	// The dynamic effect of the light, can either be "colorloop" or "none".
-	// If set to colorloop, the light will cycle through all hues using the
-	// current brightness and saturation settings.
-	Effect string `json:"effect,omitempty"`
-
-	// The alert effect, is a temporary change to the bulb’s state, and has one
-	// of the following values:
-	//
-	// 	"none" – The light is not performing an alert effect.
-	// 	"select" – The light is performing one breathe cycle.
-	// 	"lselect" – The light is performing breathe cycles for 15 seconds or
-	// 	until an "alert": "none" command is received.
-	//
-	// Note that this contains the last alert sent to the light and not its
-	// current state. i.e. After the breathe cycle has finished the bridge does
-	// not reset the alert to "none".
-	Alert string `json:"alert,omitempty"`
-
-	// The Mired Color temperature of the light. 2012 connected lights are
-	// capable of 153 (6500K) to 500 (2000K). https://en.wikipedia.org/wiki/Mired
-	Ct float64 `json:"ct,omitempty"`
-
-	// On/Off state of the light. On=true, Off=false
-	On bool `json:"on"`
+// State holds a structure that is used to update a light's state.
+type State struct {
+	// On, when true, will turn a light on.
+	On bool `json:"on,omitempty"`
 
 	// The brightness value to set the light to. Brightness is a scale from 1
 	// (the minimum the light is capable of) to 254 (the maximum).
@@ -218,18 +202,124 @@ type LightState struct {
 
 	// The hue value to set light to. The hue value is a wrapping value between
 	// 0 and 65535. Both 0 and 65535 are red, 25500 is green and 46920 is blue.
-	// e.g. "hue": 50000 will set the light to a specific hue.
+	// e.g. “brightness”: 60 will set the light to a specific brightness
 	Hue uint16 `json:"hue,omitempty"`
 
 	// Saturation of the light. 254 is the most saturated (colored) and 0 is
 	// the least saturated (white).
 	Saturation uint8 `json:"sat,omitempty"`
+
+	// The x and y coordinates of a color in CIE color space. The first entry
+	// is the x coordinate and the second entry is the y coordinate. Both x and
+	// y must be between 0 and 1. If the specified coordinates are not in the
+	// CIE color space, the closest color to the coordinates will be chosen.
+	XY *[2]float64 `json:"xy,omitempty"`
+
+	// The Mired Color temperature of the light. 2012 connected lights are
+	// capable of 153 (6500K) to 500 (2000K).
+	Ct float64 `json:"ct,omitempty"`
+
+	// The alert effect, is a temporary change to the bulb’s state, and has one
+	// of the following values:
+	// 	"none" – The light is not performing an alert effect.
+	// 	"select" – The light is performing one breathe cycle.
+	// 	"lselect" – The light is performing breathe cycles for 15 seconds or
+	// 		until an "alert": "none" command is received.
+	// Note that this contains the last alert sent to the light and not its
+	// current state. i.e. After the breathe cycle has finished the bridge does
+	// not reset the alert to "none".
+	Alert string `json:"alert,omitempty"`
+
+	// The dynamic effect of the light. Currently "none" and "colorloop" are
+	// supported. Other values will generate an error of type 7. Setting the
+	// effect to colorloop will cycle through all hues using the current
+	// brightness and saturation settings.
+	Effect string `json:"effect,omitempty"`
+
+	// The duration of the transition from the light’s current state to the new
+	// state. This is given as a multiple of 100ms and defaults to 4 (400ms).
+	// For example, setting transitiontime:10 will make the transition last 1
+	// second.
+	TransitionTime uint16 `json:"transitiontime,omitempty"`
+
+	// As of 1.7. Increments or decrements the value of the brightness. It is
+	// ignored if the Brightness field is provided. Any ongoing brightness
+	// transition is stopped. Setting a value of 0 also stops any ongoing
+	// transition.
+	BriInc int `json:"bri_inc,omitempty"`
+
+	// As of 1.7. Increments or decrements the value of Saturation. It is
+	// ignored if the Saturation field is provided. Any ongoing Saturation
+	// transition is stopped. Setting a value of 0 also stops any ongoing
+	// transition.
+	SatInc int `json:"sat_inc,omitempty"`
+
+	// As of 1.7. Increments or decrements the value of the Hue. It is ignored
+	// if the Hue field is provided. Any ongoing color transition is stopped.
+	// Setting a value of 0 also stops any ongoing transition. Note if the
+	// resulting values are < 0 or > 65535 the result is wrapped. For example:
+	// HueInc with a value of 1 will result in 0 when applied to a Hue of 65535.
+	// HueInc with a value of -2 will result in 65534 when applied to a Hue of 0.
+	HueInc int `json:"hue_inc,omitempty"`
+
+	// As of 1.7. Increments or decrements the value of Ct. It is ignored if
+	// the Ct field is provided. Any ongoing color transition is stopped.
+	// Setting a value of 0 also stops any ongoing transition.
+	CtInc int `json:"ct_inc,omitempty"`
+
+	// As of 1.7. Increments or decrements the value of the XY. It is ignored
+	// if the XY attribute is provided. Any ongoing color transition is stopped.
+	// Setting a value of 0 also stops any ongoing transition. Will stop at it's
+	// gamut boundaries. Max value [0.5, 0.5].
+	XYInc *[2]float64 `json:"xy_inc,omitempty"`
 }
 
-// Commit commits the new state to the bridge.
-func (ls *LightState) Commit() error { return ls.make(ls) }
+// LightState holds the active state of a specific light
+type LightState struct {
+	// On/Off state of the light. On=true, Off=false
+	On bool `json:"on"`
 
-func (ls *LightState) make(state *LightState) error {
-	_, err := ls.l.bridge.call(http.MethodPut, state, "lights", ls.l.ID, "state")
-	return err
+	// Brightness of the light. This is a scale from the minimum brightness the
+	// light is capable of, 1, to the maximum capable brightness, 254.
+	Brightness uint8 `json:"bri"`
+
+	// Hue of the light. This is a wrapping value between 0 and 65535. Both 0
+	// and 65535 are red, 25500 is green and 46920 is blue.
+	Hue uint16 `json:"hue"`
+
+	// Hue of the light. This is a wrapping value between 0 and 65535. Both 0
+	// and 65535 are red, 25500 is green and 46920 is blue.
+	Saturation uint8 `json:"sat"`
+
+	// The x and y coordinates of a color in CIE color space. The first entry
+	// is the x coordinate and the second entry is the y coordinate. Both x and
+	// y are between 0 and 1.
+	XY [2]float64 `json:"xy"`
+
+	// The Mired Color temperature of the light. 2012 connected lights are
+	// capable of 153 (6500K) to 500 (2000K).
+	ColorTemp float64 `json:"ct"`
+
+	// The alert effect, which is a temporary change to the bulb’s state. This
+	// can take one of the following values:
+	// 	"none" – The light is not performing an alert effect.
+	// 	"select" – The light is performing one breathe cycle.
+	// 	"lselect" – The light is performing breathe cycles for 15 seconds or
+	// 		until an "alert": "none" command is received.
+	// Note that this contains the last alert sent to the light and not its
+	// current state. i.e. After the breathe cycle has finished the bridge does
+	// not reset the alert to "none".
+	Alert string `json:"alert"`
+
+	// The dynamic effect of the light, can either be "none" or "colorloop".
+	Effect string `json:"effect"`
+
+	// Indicates the color mode in which the light is working, this is the last
+	// command type it received. Values are "hs" for Hue and Saturation, "xy"
+	// for XY and "ct" for Color Temperature. This parameter is only present
+	// when the light supports at least one of the values.
+	ColorMode string `json:"colormode"`
+
+	// Indicates if a light can be reached by the bridge.
+	Reachable bool `json:"reachable"`
 }

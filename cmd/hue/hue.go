@@ -21,7 +21,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := l.Toggle(); err != nil {
+	err = l.Set(&hue.State{
+		TransitionTime: 0,
+		Brightness:     255,
+		XY:             &[2]float64{1, 0.8},
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
 }
