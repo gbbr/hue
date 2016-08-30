@@ -144,9 +144,9 @@ func (l *Light) On() error { return l.Set(&State{On: true}) }
 
 // Off turns the light off.
 func (l *Light) Off() error {
-	_, err := l.bridge.call(http.MethodPut, struct {
-		On bool `json:"on"`
-	}{false}, "lights", l.ID, "state")
+	_, err := l.bridge.call(http.MethodPut, map[string]bool{
+		"on": false,
+	}, "lights", l.ID, "state")
 	if err == nil {
 		l.State.On = false
 	}
@@ -163,7 +163,7 @@ func (l *Light) Toggle() error {
 
 // Rename sets the name by which this light can be addressed.
 func (l *Light) Rename(name string) error {
-	_, err := l.bridge.call(http.MethodPut, map[string]interface{}{
+	_, err := l.bridge.call(http.MethodPut, map[string]string{
 		"name": name,
 	}, "lights", l.ID)
 	if err == nil {

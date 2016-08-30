@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
@@ -153,6 +154,54 @@ func TestLight(t *testing.T) {
 		}
 		if l.Name != "asd" {
 			t.Fatalf("expected name to become 'asd', got '%s'", l.Name)
+		}
+	})
+
+	t.Run("Set", func(t *testing.T) {
+		mb := mockBridge(t)
+		defer mb.teardown()
+		mb.nextResponse = testLights
+		l, err := mb.b.Lights().Get("l1name")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := &State{Alert: "alert123"}
+		srv := httptest.NewServer(
+			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch r.Method {
+				case http.MethodPut:
+					// on PUT request check that it's correct and return
+					// a random success string
+					s := new(State)
+					if err := json.NewDecoder(r.Body).Decode(s); err != nil {
+						t.Fatal(err)
+					}
+					if !reflect.DeepEqual(s, want) {
+						t.Fatalf("expected %v, got %v", want, s)
+					}
+					if err := json.NewEncoder(w).Encode(map[string]string{"success": "true"}); err != nil {
+						t.Fatal(err)
+					}
+				case http.MethodGet:
+					// on GET request return the new, altered state of the light
+					if err := json.NewEncoder(w).Encode(Light{
+						State: LightState{Alert: want.Alert},
+					}); err != nil {
+						t.Fatal(err)
+					}
+				default:
+					t.Fatal("unexpected request")
+				}
+			}))
+		defer srv.Close()
+
+		mb.b.bridgeID.IP = srv.URL + "/"
+		if err := l.Set(want); err != nil {
+			t.Fatal(err)
+		}
+		if l.State.Alert != "alert123" {
+			t.Fatalf("expected 'Alert' to be 'alert123', got '%s'", l.State.Alert)
 		}
 	})
 }
