@@ -104,18 +104,17 @@ func (b *Bridge) pairAs(appName string) error {
 		return err
 	}
 
-	lengthWithoutHost := len(appName) + len(runtime.GOOS) + 1 // 1 for the `-`
-	maxLengthHost := maxDeviceTypeLength - lengthWithoutHost
-	if maxLengthHost <= 0 {
-		return fmt.Errorf("appName length (%d) combined with GOOS (%d) exceed maximum allowed device type", len(appName), len(runtime.GOOS))
+	if len(appName) > 20 {
+		appName = appName[:20]
 	}
 
-	if len(host) > maxLengthHost {
-		host = host[0:maxLengthHost-1]
+	deviceName := fmt.Sprintf("%s-%s", runtime.GOOS, host)
+	if len(deviceName) > 19 {
+		deviceName = deviceName[:19]
 	}
 
 	msg, err := b.call(http.MethodPost, map[string]interface{}{
-		"devicetype": fmt.Sprintf("%s#%s-%s", appName, host, runtime.GOOS),
+		"devicetype": fmt.Sprintf("%s#%s", appName, deviceName),
 	})
 	if err != nil {
 		return err
