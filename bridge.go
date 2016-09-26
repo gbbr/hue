@@ -10,7 +10,11 @@ import (
 	"runtime"
 )
 
-const maxDeviceTypeLength = 40
+// http://www.developers.meethue.com/documentation/configuration-api#71_create_user
+const (
+	maxAppNameLength = 20
+	maxDeviceNameLength = 19
+)
 
 type Bridge struct {
 	bridgeID
@@ -104,13 +108,13 @@ func (b *Bridge) pairAs(appName string) error {
 		return err
 	}
 
-	if len(appName) > 20 {
-		appName = appName[:20]
+	if len(appName) > maxAppNameLength {
+		appName = appName[:maxAppNameLength]
 	}
 
 	deviceName := fmt.Sprintf("%s-%s", runtime.GOOS, host)
-	if len(deviceName) > 19 {
-		deviceName = deviceName[:19]
+	if len(deviceName) > maxDeviceNameLength {
+		deviceName = deviceName[:maxDeviceNameLength]
 	}
 
 	msg, err := b.call(http.MethodPost, map[string]interface{}{
