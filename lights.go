@@ -140,25 +140,18 @@ type Light struct {
 }
 
 // On turns the light on.
-func (l *Light) On() error { return l.Set(&State{On: true}) }
+func (l *Light) On() error {
+	return l.Set(&State{On: true})
+}
 
 // Off turns the light off.
 func (l *Light) Off() error {
-	_, err := l.bridge.call(http.MethodPut, map[string]bool{
-		"on": false,
-	}, "lights", l.ID, "state")
-	if err == nil {
-		l.State.On = false
-	}
-	return err
+	return l.Set(&State{On: false})
 }
 
 // Toggle toggles a light on/off.
 func (l *Light) Toggle() error {
-	if l.State.On {
-		return l.Off()
-	}
-	return l.On()
+	return l.Set(&State{On: !l.State.On})
 }
 
 // Rename sets the name by which this light can be addressed.
@@ -172,8 +165,7 @@ func (l *Light) Rename(name string) error {
 	return err
 }
 
-// Set sets the new state of the light. Note that Set can not turn the light off.
-// In order to do that, use the provided Off method.
+// Set sets the new state of the light.
 func (l *Light) Set(s *State) error {
 	_, err := l.bridge.call(http.MethodPut, s, "lights", l.ID, "state")
 	if err != nil {
@@ -192,7 +184,7 @@ func (l *Light) Set(s *State) error {
 // State holds a structure that is used to update a light's state.
 type State struct {
 	// On, when true, will turn a light on.
-	On bool `json:"on,omitempty"`
+	On bool `json:"on"`
 
 	// The brightness value to set the light to. Brightness is a scale from 1
 	// (the minimum the light is capable of) to 254 (the maximum).

@@ -73,6 +73,7 @@ func (b Bridge) call(method string, body interface{}, tokens ...string) ([]byte,
 			return nil, err
 		}
 	}
+
 	req, err := http.NewRequest(method, b.addr(tokens...), bytes.NewReader(bd))
 	if err != nil {
 		return nil, err
