@@ -105,6 +105,11 @@ func (g *Group) Set(s *State) error {
 		return err
 	}
 
+	return g.Refresh()
+}
+
+// Refresh the status of the group, so we are up to date
+func (g *Group) Refresh() error {
 	r, err := g.bridge.call(http.MethodGet, nil, "groups", g.ID)
 	if err != nil {
 		return err
