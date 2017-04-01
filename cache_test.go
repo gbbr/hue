@@ -2,10 +2,11 @@ package hue
 
 import (
 	"os"
-	"os/user"
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/mitchellh/go-homedir"
 )
 
 func TestToCacheFromCache(t *testing.T) {
@@ -21,11 +22,11 @@ func TestToCacheFromCache(t *testing.T) {
 		t.Fatalf("expected %v, got %v", want, b)
 	}
 	// clean-up
-	u, err := user.Current()
+	homeDir, err := homedir.Dir()
 	if err != nil {
 		t.Fatalf("failed to clean up: %v", err)
 	}
-	if err := os.Remove(path.Join(u.HomeDir, cacheFile)); err != nil {
+	if err := os.Remove(path.Join(homeDir, cacheFile)); err != nil {
 		t.Fatalf("failed to clean up: %v", err)
 	}
 	cacheFile = origCache
