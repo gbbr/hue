@@ -17,16 +17,11 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	l, err := b.Lights().Get("Couch")
+	l, err := b.Lights().Get("Desk")
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = l.Set(&hue.State{
-		TransitionTime: 0,
-		Brightness:     255,
-		XY:             &[2]float64{1, 0.8},
-	})
-	if err != nil {
+	if err := l.Off(); err != nil {
 		log.Fatal(err)
 	}
 }
