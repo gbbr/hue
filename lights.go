@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-// ErrNotExist is returned when a light was not found.
-var ErrNotExist = errors.New("light does not exist")
+// ErrNotExist is returned when a resource does not exist
+var ErrNotExist = errors.New("resource does not exist")
 
 const (
 	ColorLoop = "colorloop"
@@ -272,6 +272,10 @@ type State struct {
 	// Setting a value of 0 also stops any ongoing transition. Will stop at it's
 	// gamut boundaries. Max value [0.5, 0.5].
 	XYInc *[2]float64 `json:"xy_inc,omitempty"`
+
+	// Scene is the identifier of the scene you wish to recall. Only applicable
+	// to groups.
+	Scene string `json:"scene,omitempty"`
 }
 
 // LightState holds the active state of a specific light
