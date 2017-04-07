@@ -5,8 +5,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/user"
 	"path"
+
+	"github.com/mitchellh/go-homedir"
 )
 
 // cacheFile stores the name of the file where bridge cache will be stored.
@@ -17,9 +18,9 @@ type cachedBridge struct{ ID, IP, Username string }
 
 // toCache writes bridge b to the cache file.
 func toCache(b *Bridge) {
-	u, err := user.Current()
+	homeDir, err := homedir.Dir()
 	if err != nil {
-		log.Printf("could not cache: %v", err)
+		log.Printf("could not get homedir: %v", err)
 		return
 	}
 	data, err := json.Marshal(cachedBridge{ID: b.ID, IP: b.IP, Username: b.username})
@@ -27,7 +28,7 @@ func toCache(b *Bridge) {
 		log.Printf("could not cache: %v", err)
 		return
 	}
-	err = ioutil.WriteFile(path.Join(u.HomeDir, cacheFile), data, 0666)
+	err = ioutil.WriteFile(path.Join(homeDir, cacheFile), data, 0666)
 	if err != nil {
 		log.Printf("could not cache: %v", err)
 		return
@@ -36,12 +37,12 @@ func toCache(b *Bridge) {
 
 // fromCache returns the cached bridge or nil otherwise.
 func fromCache() *Bridge {
-	u, err := user.Current()
+	homeDir, err := homedir.Dir()
 	if err != nil {
-		log.Printf("could not retrieve cache: %v", err)
+		log.Printf("could not get homedir: %v", err)
 		return nil
 	}
-	data, err := ioutil.ReadFile(path.Join(u.HomeDir, cacheFile))
+	data, err := ioutil.ReadFile(path.Join(homeDir, cacheFile))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
