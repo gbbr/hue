@@ -1,4 +1,4 @@
-[![hue](https://godoc.org/github.com/gbbr/hue?status.svg)](https://godoc.org/github.com/gbbr/hue) 
+[![hue](https://godoc.org/gbbr.io/hue?status.svg)](https://godoc.org/gbbr.io/hue) 
 [![travis-ci](https://travis-ci.org/gbbr/hue.svg?branch=master)](https://travis-ci.org/gbbr/hue) 
 
 # ![](http://i1253.photobucket.com/albums/hh588/gbbr/light-bulb-outline_318-50593%20copy_zpsexky6j6x.jpg) hue
@@ -15,7 +15,7 @@ package main
 
 import (
     "log"
-    "github.com/gbbr/hue"
+    "gbbr.io/hue"
 )
 
 func main() {
@@ -42,5 +42,5 @@ hue attempts to discover a bridge using UPnP (for up to 5 seconds) or by falling
 
 Shall you ever need to reset the cache, simply remove the file.
 
-There are still aspects of the API to be implemented, but the individual light interaction is complete. To see the full documentation, visit our [godoc](https://godoc.org/github.com/gbbr/hue) page.
+There are still aspects of the API to be implemented, but the individual light interaction is complete. To see the full documentation, visit our [godoc](https://godoc.org/gbbr.io/hue) page.
  

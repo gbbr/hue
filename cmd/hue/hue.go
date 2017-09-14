@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/gbbr/hue"
+	"gbbr.io/hue"
 )
 
 func main() {
