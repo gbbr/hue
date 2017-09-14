@@ -1,4 +1,13 @@
 language: go
 
+before_install:
+     # our 'canonical import path' is gopkg.in-based, not github.com
+     - export CANONICAL_IMPORT=${GOPATH}/src/gbbr.io/hue
+     - mkdir -p ${CANONICAL_IMPORT}
+     - rsync -az ${TRAVIS_BUILD_DIR}/ ${CANONICAL_IMPORT}/
+     - cd ${CANONICAL_IMPORT}
+     - rm -rf ${TRAVIS_BUILD_DIR}
+     - export TRAVIS_BUILD_DIR=${CANONICAL_IMPORT}
+
 go:
      - 1.7
